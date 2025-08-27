@@ -23,7 +23,8 @@ jobs:
                 
             - name: index.html für nginx bereitstellen
               run: |
-                scp -i ~/.ssh/meinPrivateKey index.html ubuntu@${{secrets.EC2_IP_1}}:/home/ubuntu/index.html
+                sed "s/\$(hostname)/${{secrets.EC2_IP_1}}/g" index.html > index_ip.html
+                scp -i ~/.ssh/meinPrivateKey index_ip.html ubuntu@${{secrets.EC2_IP_1}}:/home/ubuntu/index.html
                 ssh -i ~/.ssh/meinPrivateKey ubuntu@${{secrets.EC2_IP_1}} "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
     deploy2:
         runs-on: ubuntu-latest
@@ -45,7 +46,8 @@ jobs:
                 
             - name: index.html für nginx bereitstellen
               run: |
-                scp -i ~/.ssh/meinPrivateKey index.html ubuntu@${{secrets.EC2_IP_2}}:/home/ubuntu/index.html
+                sed "s/\$(hostname)/${{secrets.EC2_IP_2}}/g" index.html > index_ip.html
+                scp -i ~/.ssh/meinPrivateKey index_ip.html ubuntu@${{secrets.EC2_IP_2}}:/home/ubuntu/index.html
                 ssh -i ~/.ssh/meinPrivateKey ubuntu@${{secrets.EC2_IP_2}} "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
     deploy3:
         runs-on: ubuntu-latest
@@ -67,5 +69,6 @@ jobs:
                 
             - name: index.html für nginx bereitstellen
               run: |
-                scp -i ~/.ssh/meinPrivateKey index.html ubuntu@${{secrets.EC2_IP_3}}:/home/ubuntu/index.html
+                sed "s/\$(hostname)/${{secrets.EC2_IP_3}}/g" index.html > index_ip.html
+                scp -i ~/.ssh/meinPrivateKey index_ip.html ubuntu@${{secrets.EC2_IP_3}}:/home/ubuntu/index.html
                 ssh -i ~/.ssh/meinPrivateKey ubuntu@${{secrets.EC2_IP_3}} "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
