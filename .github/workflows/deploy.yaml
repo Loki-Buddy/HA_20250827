@@ -7,13 +7,16 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                ec2_ip: ["${{ secrets.EC2_IP_1 }}", "${{ secrets.EC2_IP_2 }}", "${{ secrets.EC2_IP_3 }}"]
+                ec2_ip:
+                    - ${{ secrets.EC2_IP_1 }}
+                    - ${{ secrets.EC2_IP_2 }}
+                    - ${{ secrets.EC2_IP_3 }}
         steps:
             - name: checkout
               uses: actions/checkout@v5
 
             - name: ssh setup
-              run: | 
+              run: |
                 mkdir -p ~/.ssh
                 echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/meinPrivateKey
                 chmod 400 ~/.ssh/meinPrivateKey
