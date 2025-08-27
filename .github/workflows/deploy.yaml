@@ -3,11 +3,20 @@ name: DeployWorkflow
 on: push
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          echo "::set-output name=matrix::{\"ec2_ip\": [\"${{ secrets.EC2_IP_1 }}\", \"${{ secrets.EC2_IP_2 }}\", \"${{ secrets.EC2_IP_3 }}\"]}"
+  
   deploy:
+    needs: set-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        ec2_ip: [$secrets.EC2_IP_1, $secrets.EC2_IP_2, $secrets.EC2_IP_3]
+      matrix: ${{fromJson(needs.set-matrix.outputs.matrix)}}
     steps:
       - name: checkout
         uses: actions/checkout@v5
