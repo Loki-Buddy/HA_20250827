@@ -1,0 +1,30 @@
+name: DeployWorkflow
+
+on: push
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                ec2_ip: ["${{ secrets.EC2_IP_1 }}", "${{ secrets.EC2_IP_2 }}", "${{ secrets.EC2_IP_3 }}"]
+        steps:
+            - name: checkout
+              uses: actions/checkout@v5
+
+            - name: ssh setup
+              run: | 
+                mkdir -p ~/.ssh
+                echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/meinPrivateKey
+                chmod 400 ~/.ssh/meinPrivateKey
+                ssh-keyscan -H ${{ matrix.ec2_ip }}  >> ~/.ssh/known_hosts    
+            
+            - name: install nginx
+              run: |
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo apt update"
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo apt install nginx -y"
+                
+            - name: index.html für nginx bereitstellen
+              run: |
+                scp -i ~/.ssh/meinPrivateKey ./index.html ubuntu@${{ matrix.ec2_ip }}:/home/ubuntu/index.html
+                ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
