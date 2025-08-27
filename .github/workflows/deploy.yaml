@@ -10,7 +10,7 @@ jobs:
     steps:
       - id: export-matrix
         run: |
-          echo "matrix={\"ec2_ip\": [\"${{ secrets.EC2_IP_1 }}\", \"${{ secrets.EC2_IP_2 }}\", \"${{ secrets.EC2_IP_3 }}\"]}" >> $GITHUB_OUTPUT
+          echo 'matrix={"ec2_ip": ["${{ secrets.EC2_IP_1 }}", "${{ secrets.EC2_IP_2 }}", "${{ secrets.EC2_IP_3 }}"]}' >> $GITHUB_OUTPUT
 
   deploy:
     needs: prepare-matrix
@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v5
+
+      - name: Debug IP
+        run: echo "Deploying to ${{ matrix.ec2_ip }}"
 
       - name: ssh setup
         run: |
