@@ -3,44 +3,27 @@ name: DeployWorkflow
 on: push
 
 jobs:
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.export-matrix.outputs.matrix }}
-    steps:
-      - id: export-matrix
-        env:
-          IP1: ${{ secrets.EC2_IP_1 }}
-          IP2: ${{ secrets.EC2_IP_2 }}
-          IP3: ${{ secrets.EC2_IP_3 }}
-        run: |
-          echo "matrix={\"ec2_ip\": [\"$IP1\", \"$IP2\", \"$IP3\"]}" >> $GITHUB_OUTPUT
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout
+              uses: actions/checkout@v5
 
-  deploy:
-    needs: prepare-matrix
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
-    steps:
-      - name: checkout
-        uses: actions/checkout@v5
-
-      - name: Debug IP
-        run: echo "Deploying to ${{ matrix.ec2_ip }}"
-
-      - name: ssh setup
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/meinPrivateKey
-          chmod 400 ~/.ssh/meinPrivateKey
-          ssh-keyscan -H ${{ matrix.ec2_ip }} >> ~/.ssh/known_hosts
-
-      - name: install nginx
-        run: |
-          ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo apt update"
-          ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo apt install nginx -y"
-
-      - name: index.html für nginx bereitstellen
-        run: |
-          scp -i ~/.ssh/meinPrivateKey frontend/index.html ubuntu@${{ matrix.ec2_ip }}:/home/ubuntu/index.html
-          ssh -i ~/.ssh/meinPrivateKey ubuntu@${{ matrix.ec2_ip }} "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
+            - name: Deploy auf alle EC2-Instanzen
+              env:
+                SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+                EC2_IPs: ${{ secrets.EC2_IPs }}
+                WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+              run: |
+                mkdir -p ~/.ssh
+                echo "$SSH_KEY" > ~/.ssh/meinPrivateKey
+                chmod 400 ~/.ssh/meinPrivateKey
+                for ip in $EC2_IPs; do
+                  echo "Bearbeite $ip"
+                  ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt update"
+                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt install nginx -y"
+                  scp -i ~/.ssh/meinPrivateKey frontend/index.html ubuntu@$ip:/home/ubuntu/index.html
+                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
+                  curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"Deployment für $ip erfolgreich!\"}" $WEBHOOK_URL
+                done
