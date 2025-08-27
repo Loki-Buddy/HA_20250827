@@ -13,17 +13,16 @@ jobs:
               env:
                 SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
                 EC2_IPs: ${{ secrets.EC2_IPs }}
-                WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
               run: |
-                mkdir -p ~/.ssh
-                echo "$SSH_KEY" > ~/.ssh/meinPrivateKey
-                chmod 400 ~/.ssh/meinPrivateKey
+                
                 for ip in $EC2_IPs; do
-                  echo "Bearbeite $ip"
-                  ssh-keyscan -H $ip >> ~/.ssh/known_hosts
-                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt update"
-                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt install nginx -y"
-                  scp -i ~/.ssh/meinPrivateKey index.html ubuntu@$ip:/home/ubuntu/index.html
-                  ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
-                  curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"Deployment für $ip erfolgreich!\"}" $WEBHOOK_URL
+                    mkdir -p ~/.ssh
+                    echo "$SSH_KEY" > ~/.ssh/meinPrivateKey
+                    chmod 400 ~/.ssh/meinPrivateKey
+                    echo "Bearbeite $ip"
+                    ssh-keyscan -H $ip >> ~/.ssh/known_hosts
+                    ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt update"
+                    ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo apt install nginx -y"
+                    scp -i ~/.ssh/meinPrivateKey index.html ubuntu@$ip:/home/ubuntu/index.html
+                    ssh -i ~/.ssh/meinPrivateKey ubuntu@$ip "sudo cp /home/ubuntu/index.html /var/www/html/index.html"
                 done
